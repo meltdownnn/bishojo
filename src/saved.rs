@@ -12,7 +12,7 @@ pub struct GameTextInformation {
     pub viewed: u128,
     pub paragraphs: Vec<(Option<String>, Vec<ParagraphContent>)>,
     pub miscellaneous: HashMap<String, String>,
-    pub files: Vec<(String, String)>,
+    pub files: Vec<(String, (String, Option<u128>))>,
     pub comments: Vec<Comment>,
 }
 impl GameTextInformation {

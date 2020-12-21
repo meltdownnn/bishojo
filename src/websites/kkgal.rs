@@ -9,7 +9,7 @@ impl KKGal {
         url: &str,
         client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
-    ) -> Result<Vec<(String, String)>, String> {
+    ) -> Result<Vec<(String, (String, Option<u128>))>, String> {
         #[derive(serde::Deserialize)]
         struct DownloadedFileStructure {
             pub name: String,
@@ -134,7 +134,8 @@ impl KKGal {
             //        date.to_string()
             //    ),
             //);
-            constructed.push((detail.name, site_link));
+            let size = byte_unit::Byte::from_str(&detail.size).map_err(|x| x.to_string())?.get_bytes();
+            constructed.push((detail.name, (site_link, Some(size))));
         }
         Ok(constructed)
     }
@@ -618,11 +619,12 @@ impl super::GalgameWebsite for KKGal {
         link: String,
         _: &crate::saved::GameTextInformation,
         file: String,
+        predicted_size: Option<u128>,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
         cache_size: usize,
     ) -> Result<(), String> {
         let response = http_client.get_async(link);
-        super::game_download_helper(response, &file, log_client, cache_size).await
+        super::game_download_helper(response, &file, log_client, cache_size, predicted_size).await
     }
 }

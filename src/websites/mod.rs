@@ -28,6 +28,7 @@ pub trait GalgameWebsite {
         link: String,
         game_info: &crate::saved::GameTextInformation,
         file: String,
+        predicted_size: Option<u128>,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
         cache_size: usize,
@@ -39,6 +40,7 @@ async fn game_download_helper<'a>(
     file: &str,
     log_client: &crate::log::LoggingClient,
     cache_size: usize,
+    predicted_size: Option<u128>
 ) -> Result<(), String> {
     let mut response = response.await.map_err(|x| x.to_string())?;
     let stream = response.body_mut();
@@ -91,9 +93,15 @@ async fn game_download_helper<'a>(
             log_client.log(
                 crate::log::LoggingLevel::StatusReport,
                 &format!(
-                    "{} {} | {}/s",
+                    "{} {} {}| {}/s",
                     file,
                     file_size_appropriate.to_string(),
+                    if let Some(i) = predicted_size {
+                        let precentage = (file_size as f64 / i as f64 * 100 as f64) as u8;
+                        format!("{}% ", precentage)
+                    } else {
+                        String::new()
+                    },
                     speed.to_string()
                 ),
             );

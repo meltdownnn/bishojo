@@ -290,7 +290,7 @@ async fn _main() {
             if !std::path::Path::new(&download_path).is_dir() {
                 std::fs::create_dir(&download_path).unwrap();
             }
-            let games: Vec<((String, String), String, &saved::GameTextInformation)> = database
+            let games: Vec<((String, (String, Option<u128>)), String, &saved::GameTextInformation)> = database
                 .0
                 .iter()
                 .filter(|x| id_hashmap.get(&x.id).is_some())
@@ -336,9 +336,10 @@ async fn _main() {
                             .get(&cli::AvailableWebsite::from_str(&x.2.website).unwrap())
                             .unwrap()
                             .download_game(
-                                x.0 .1,
+                                x.0 .1.0,
                                 x.2,
                                 format!("{}{}/{}", download_path, x.1, x.0 .0),
+                                x.0.1.1,
                                 &http_client,
                                 &logging_client,
                                 cache_size.get_bytes() as usize,
@@ -505,7 +506,7 @@ fn markdown_generator(
             "## Downloads\n{}\n\n",
             game.files
                 .iter()
-                .map(|x| format!("- {}\n  {}", x.0, x.1))
+                .map(|x| format!("- {}\n  {} {}", x.0, x.1.0, if let Some(i) = x.1.1 {byte_unit::Byte::from_bytes(i).to_string()} else {String::new()}))
                 .collect::<Vec<_>>()
                 .join("\n")
         ));
