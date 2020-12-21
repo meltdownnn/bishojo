@@ -67,14 +67,16 @@ async fn _main() {
             site: i,
             start_page: j,
             end_page: k,
+            overwrite,
         } => {
             let structure = i.to_struct();
+            let immutable_database = database.0.clone();
             let mut job_queue: futures::stream::FuturesUnordered<_> = (j..=k)
                 .into_iter()
                 .map(|x| {
                     exec_future_and_return_vars(
                         x,
-                        structure.fetch_metadata(x, &http_client, &logging_client),
+                        structure.fetch_metadata(x, overwrite, &immutable_database, &http_client, &logging_client),
                     )
                 })
                 .collect();
@@ -94,7 +96,7 @@ async fn _main() {
                 }
             }
         }
-        cli::ApplicationSubCommand::DownloadUserAvatars { site, no_overwrite } => {
+        cli::ApplicationSubCommand::DownloadUserAvatars { site, overwrite } => {
             let avatars: Vec<(String, cli::AvailableWebsite)> = database
                 .0
                 .iter()
@@ -118,7 +120,7 @@ async fn _main() {
                         .collect::<Vec<(String, cli::AvailableWebsite)>>()
                 })
                 .flatten()
-                .filter(|x| !(no_overwrite && database.1 .0.get(&x.0).is_some()))
+                .filter(|x| !(!overwrite && database.1 .0.get(&x.0).is_some()))
                 .collect();
             logging_client.log(
                 log::LoggingLevel::StatusReport,
@@ -173,7 +175,7 @@ async fn _main() {
         }
         cli::ApplicationSubCommand::DownloadScreenshots {
             game_id,
-            no_overwrite,
+            overwrite,
         } => {
             let id_hashmap = match game_id.len() {
                 0 => None,
@@ -205,7 +207,7 @@ async fn _main() {
                                         (
                                             a,
                                             cli::AvailableWebsite::from_str(&x.website).unwrap(),
-                                            x.clone(),
+                                            x,
                                         )
                                     })
                                     .collect::<Vec<_>>()
@@ -221,7 +223,7 @@ async fn _main() {
                             None
                         }
                     })
-                    .filter(|x| !(database.1 .0.get(&x.0).is_some() && no_overwrite))
+                    .filter(|x| !(database.1 .0.get(&x.0).is_some() && !overwrite))
                     .collect();
             logging_client.log(
                 log::LoggingLevel::StatusReport,

@@ -556,12 +556,17 @@ impl super::GalgameWebsite for KKGal {
     async fn fetch_metadata(
         &self,
         page: u32,
+        overwrite: bool,
+        database: &crate::saved::GameTextDatabase,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
     ) -> Result<Vec<crate::saved::GameTextInformation>, String> {
         let metadata = Self::download_index(page, http_client, log_client).await?;
         let mut job_vec = Vec::new();
         for i in metadata {
+            if !overwrite && database.iter().find(|x| x.id == seahash::hash(i.as_bytes())).is_some() {
+                continue;
+            }
             job_vec.push(crate::exec_future_and_return_vars(
                 i.clone(),
                 Self::download_information(i.clone(), http_client, log_client),

@@ -7,6 +7,8 @@ pub trait GalgameWebsite {
     async fn fetch_metadata(
         &self,
         page: u32,
+        overwrite: bool,
+        database: &crate::saved::GameTextDatabase,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
     ) -> Result<Vec<crate::saved::GameTextInformation>, String>;

@@ -28,18 +28,20 @@ pub enum ApplicationSubCommand {
         start_page: u32,
         #[structopt(short, long)]
         end_page: u32,
+        #[structopt(short, long)]
+        overwrite: bool
     },
     DownloadUserAvatars {
         #[structopt(long)]
         site: Option<AvailableWebsite>,
         #[structopt(short, long)]
-        no_overwrite: bool,
+        overwrite: bool,
     },
     DownloadScreenshots {
         #[structopt(long)]
         game_id: Vec<u64>,
         #[structopt(short, long)]
-        no_overwrite: bool,
+        overwrite: bool,
     },
     DownloadGame {
         #[structopt(long)]

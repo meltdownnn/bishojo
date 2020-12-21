@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::collections::HashMap;
 pub type GameTextDatabase = Vec<GameTextInformation>;
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GameTextInformation {
     pub id: u64,
     pub website: String,
@@ -32,12 +32,12 @@ impl GameTextInformation {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum ParagraphContent {
     Text(String),
     Image(String),
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Comment {
     pub user_avatar: String,
     pub author: String,
