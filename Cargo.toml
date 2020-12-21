@@ -1,0 +1,27 @@
+[package]
+name = "bishojo"
+version = "0.1.0"
+authors = ["meltdownnn <75382863+meltdownnn@users.noreply.github.com>"]
+edition = "2018"
+license = "GPL-3.0-only"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+isahc = { version = "0.9", features = ["static-curl"] }
+colored = "2"
+structopt = "0.3"
+time = { version = "0.2", features = ["serde"]}
+serde = { version = "1.0", features = ["derive"] }
+rmp-serde = "0.15"
+serde_json = "1.0"
+serde_bytes = "0.11"
+async-trait = "0.1"
+futures = "0.3"
+#tokio-util = { version = "0.5", features = ["compat"] }
+base64 = "0.13"
+tokio = { version = "0.3", features = ["rt-multi-thread", "macros", "fs", "io-util"] }
+seahash = "4.0"
+byte-unit = "4.0"
+rusthtml = { git = "https://github.com/meltdownnn/rusthtml.git" }
+pool-future = { git = "https://github.com/meltdownnn/pool-future.git" }
