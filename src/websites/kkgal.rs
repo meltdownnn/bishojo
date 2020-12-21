@@ -531,10 +531,27 @@ impl KKGal {
         }
         if let Some(i) = constructed.miscellaneous.get("overall_link") {
             if i.find("pan.baidu.com").is_none() {
-                constructed.files =
-                    Self::download_file_information(i, http_client, log_client).await?;
+                match Self::download_file_information(i, http_client, log_client).await {
+                    Ok(i) => constructed.files = i,
+                    Err(j) => {
+                        log_client.log(
+                            crate::log::LoggingLevel::Warning,
+                            &format!(
+                                "Error while parsing download url: {}, storing it as pure text.",
+                                j
+                            ),
+                        );
+                        constructed.paragraphs.push((
+                            Some(String::from("Download link")),
+                            vec![crate::saved::ParagraphContent::Text(i.to_string())],
+                        ))
+                    }
+                }
             } else {
-                constructed.paragraphs.push((Some(String::from("Download link")), vec![crate::saved::ParagraphContent::Text(i.to_string())]))
+                constructed.paragraphs.push((
+                    Some(String::from("Download link")),
+                    vec![crate::saved::ParagraphContent::Text(i.to_string())],
+                ))
             }
         }
         constructed
@@ -564,7 +581,12 @@ impl super::GalgameWebsite for KKGal {
         let metadata = Self::download_index(page, http_client, log_client).await?;
         let mut job_vec = Vec::new();
         for i in metadata {
-            if !overwrite && database.iter().find(|x| x.id == seahash::hash(i.as_bytes())).is_some() {
+            if !overwrite
+                && database
+                    .iter()
+                    .find(|x| x.id == seahash::hash(i.as_bytes()))
+                    .is_some()
+            {
                 continue;
             }
             job_vec.push(crate::exec_future_and_return_vars(
