@@ -27,6 +27,8 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: bishojo
+      - name: Fix permission
+        run: chmod +x bishojo
       - run: ./bishojo -t 2 fetch-metadata --end-page 95 --start-page 1 --site kkgal
       - name: Upload artifact
         uses: actions/upload-artifact@v2
