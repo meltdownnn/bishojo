@@ -1,0 +1,40 @@
+name: Default actions
+on: push
+jobs:
+  build_and_test:
+    name: Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: bishojo
+          path: target/release/bishojo
+  index:
+    name: Index kkgal
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built binary
+        uses: actions/download-artifact@v2
+        with:
+          name: bishojo
+      - name: Fix permission
+        run: chmod +x bishojo
+      - run: ./bishojo --timeout 100 -t 2 fetch-metadata --end-page 95 --start-page 1 --site kkgal
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: database.json
+          path: database.json
