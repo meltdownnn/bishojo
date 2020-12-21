@@ -134,8 +134,8 @@ impl KKGal {
             //        date.to_string()
             //    ),
             //);
-            let size = byte_unit::Byte::from_str(&detail.size).map_err(|x| x.to_string())?.get_bytes();
-            constructed.push((detail.name, (site_link, Some(size))));
+            let size = byte_unit::Byte::from_str(&detail.size).ok().map(|x| x.get_bytes());
+            constructed.push((detail.name, (site_link, size)));
         }
         Ok(constructed)
     }
