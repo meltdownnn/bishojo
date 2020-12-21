@@ -16,6 +16,8 @@ pub struct ApplicationMainEntry {
     pub user_agent: String,
     #[structopt(long, default_value = "20")]
     pub timeout: u64,
+    #[structopt(long, short)]
+    pub retry: Option<usize>,
     #[structopt(subcommand)]
     pub subcommand: ApplicationSubCommand,
 }

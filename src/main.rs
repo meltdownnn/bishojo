@@ -1,4 +1,3 @@
-// TODO: add file size support
 use structopt::StructOpt;
 mod cli;
 mod log;
@@ -62,6 +61,7 @@ async fn _main() {
             }
         },
     );
+    let retry = arguments.retry.map(|x| x + 1).unwrap_or(1);
     match arguments.subcommand {
         cli::ApplicationSubCommand::FetchMetadata {
             site: i,
@@ -76,7 +76,7 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x,
-                        structure.fetch_metadata(x, overwrite, &immutable_database, &http_client, &logging_client),
+                        exec_future_with_retry((0..retry).into_iter().map(|_| structure.fetch_metadata(x, overwrite, &immutable_database, &http_client, &logging_client)).collect()),
                     )
                 })
                 .collect();
@@ -136,11 +136,11 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x.0.clone(),
-                        clients.get(&x.1).unwrap().download_user_avatars(
-                            x.0,
+                        exec_future_with_retry((0..retry).into_iter().map(|_| clients.get(&x.1).unwrap().download_user_avatars(
+                            x.0.clone(),
                             &http_client,
                             &logging_client,
-                        ),
+                        )).collect()),
                     )
                 })
                 .collect();
@@ -239,12 +239,12 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x.0.clone(),
-                        clients.get(&x.1).unwrap().download_screenshot(
-                            x.0,
+                        exec_future_with_retry((0..retry).into_iter().map(|_| clients.get(&x.1).unwrap().download_screenshot(
+                            x.0.clone(),
                             x.2,
                             &http_client,
                             &logging_client,
-                        ),
+                        )).collect()),
                     )
                 })
                 .collect();
@@ -334,18 +334,18 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         (x.0 .0.clone(), x.1.clone()),
-                        clients
+                        exec_future_with_retry((0..retry).into_iter().map(|_| clients
                             .get(&cli::AvailableWebsite::from_str(&x.2.website).unwrap())
                             .unwrap()
                             .download_game(
-                                x.0 .1.0,
+                                x.0 .1.0.clone(),
                                 x.2,
                                 format!("{}{}/{}", download_path, x.1, x.0 .0),
                                 x.0.1.1,
                                 &http_client,
                                 &logging_client,
                                 cache_size.get_bytes() as usize,
-                            ),
+                            )).collect()),
                     )
                 })
                 .collect();
@@ -406,6 +406,7 @@ async fn _main() {
                         ),
                     ));
                 }
+                // I don't think tokio fs write need to retry.
                 let mut job_queue: futures::stream::FuturesUnordered<_> =
                     job_vec.into_iter().collect();
                 while let Some(i) = job_queue.next().await {
@@ -440,6 +441,17 @@ async fn exec_future_and_return_vars<T, U: std::future::Future>(
     function: U,
 ) -> (T, U::Output) {
     (vars, function.await)
+}
+async fn exec_future_with_retry<V, W: std::fmt::Display, U: std::future::Future<Output = Result<V, W>>>(functions: Vec<U>) -> Result<V, String> {
+    let mut error_messages = Vec::with_capacity(functions.len());
+    for i in functions {
+        match i.await {
+            Ok(i) => return Ok(i),
+            Err(i) => error_messages.push(i.to_string())
+        }
+    }
+    error_messages.dedup();
+    Err(error_messages.join(", "))
 }
 fn markdown_generator(
     database: &saved::GameTextDatabase,
