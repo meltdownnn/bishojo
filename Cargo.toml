@@ -1,6 +1,6 @@
 [package]
 name = "bishojo"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["meltdownnn <75382863+meltdownnn@users.noreply.github.com>"]
 edition = "2018"
 license = "GPL-3.0-only"
