@@ -123,7 +123,7 @@ async fn _main() {
                 .filter(|x| !(!overwrite && database.1 .0.get(&x.0).is_some()))
                 .collect();
             logging_client.log(
-                log::LoggingLevel::StatusReport,
+                log::LoggingLevel::Message,
                 &format!("Will download {} avatars", avatars.len()),
             );
             let avatar_len = avatars.len();
@@ -226,7 +226,7 @@ async fn _main() {
                     .filter(|x| !(database.1 .0.get(&x.0).is_some() && !overwrite))
                     .collect();
             logging_client.log(
-                log::LoggingLevel::StatusReport,
+                log::LoggingLevel::Message,
                 &format!("Will download {} screenshots", screenshots.len()),
             );
             let screenshot_len = screenshots.len();
