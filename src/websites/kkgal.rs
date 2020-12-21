@@ -90,7 +90,7 @@ impl KKGal {
                 .next()
                 .ok_or(String::from("Error while parsing time from file detail"))?
                 .split(':');
-            let date = time::Date::try_from_ymd(
+            let _date = time::Date::try_from_ymd(
                 date.next()
                     .ok_or("Bad date".to_string())?
                     .parse()
@@ -125,15 +125,15 @@ impl KKGal {
                     .map_err(|_| String::from("Error while parsing second"))?,
             )
             .map_err(|x| x.to_string())?;
-            log_client.log(
-                crate::log::LoggingLevel::StatusReport,
-                &format!(
-                    "Found downloadable link {} ({}, {})",
-                    site_link,
-                    detail.size,
-                    date.to_string()
-                ),
-            );
+            //log_client.log(
+            //    crate::log::LoggingLevel::StatusReport,
+            //    &format!(
+            //        "Found downloadable link {} ({}, {})",
+            //        site_link,
+            //        detail.size,
+            //        date.to_string()
+            //    ),
+            //);
             constructed.push((detail.name, site_link));
         }
         Ok(constructed)
