@@ -51,7 +51,7 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bishojo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "base64",
@@ -69,6 +69,7 @@ dependencies = [
  "structopt",
  "time",
  "tokio",
+ "unescape",
 ]
 
 [[package]]
@@ -1086,6 +1087,11 @@ dependencies = [
  "pin-project 0.4.27",
  "tracing",
 ]
+
+[[package]]
+name = "unescape"
+version = "0.1.0"
+source = "git+https://github.com/meltdownnn/unescape-rs.git#7ddb2f6f6db4524683f9bee71ded4a5ae3e147da"
 
 [[package]]
 name = "unicode-bidi"

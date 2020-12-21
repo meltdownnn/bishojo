@@ -73,6 +73,7 @@ impl KKGal {
             ))?;
             text[..text_end].to_string()
         };
+        let text = unescape::unescape(&text).ok_or(String::from("Error while unescaping quote"))?;
         let text =
             base64::decode(&text).map_err(|x| format!("Error while parsing script: {}", x))?;
         let parsed_detail: Vec<DownloadedFileStructure> = serde_json::from_slice(&text)
