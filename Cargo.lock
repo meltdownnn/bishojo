@@ -723,7 +723,7 @@ dependencies = [
 [[package]]
 name = "rusthtml"
 version = "0.2.5"
-source = "git+https://github.com/meltdownnn/rusthtml.git#18b2ba9de91e30c1e0157e58f849a1a4f580c94f"
+source = "git+https://github.com/meltdownnn/rusthtml.git#5aca2370f2005663cf9ca9ffc0fb6bb3a46e4377"
 
 [[package]]
 name = "ryu"
