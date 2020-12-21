@@ -29,7 +29,7 @@ jobs:
           name: bishojo
       - run: target/release/bishojo -t 2 fetch-metadata --end-page 95 --start-page 1 --site kkgal
       - name: Upload artifact
-        uses: action/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           name: database.json
           path: database.json
