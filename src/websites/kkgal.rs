@@ -134,7 +134,9 @@ impl KKGal {
             //        date.to_string()
             //    ),
             //);
-            let size = byte_unit::Byte::from_str(&detail.size).ok().map(|x| x.get_bytes());
+            let size = byte_unit::Byte::from_str(&detail.size)
+                .ok()
+                .map(|x| x.get_bytes());
             constructed.push((detail.name, (site_link, size)));
         }
         Ok(constructed)
@@ -528,7 +530,12 @@ impl KKGal {
             }
         }
         if let Some(i) = constructed.miscellaneous.get("overall_link") {
-            constructed.files = Self::download_file_information(i, http_client, log_client).await?;
+            if i.find("pan.baidu.com").is_none() {
+                constructed.files =
+                    Self::download_file_information(i, http_client, log_client).await?;
+            } else {
+                constructed.paragraphs.push((Some(String::from("Download link")), vec![crate::saved::ParagraphContent::Text(i.to_string())]))
+            }
         }
         constructed
             .paragraphs
