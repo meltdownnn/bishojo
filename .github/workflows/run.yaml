@@ -33,8 +33,31 @@ jobs:
       - name: Fix permission
         run: chmod +x bishojo
       - run: ./bishojo --timeout 100 -t 2 fetch-metadata --end-page 95 --start-page 1 --site kkgal
-      - name: Upload artifact
+      - name: Upload database
         uses: actions/upload-artifact@v2
         with:
           name: database.json
           path: database.json
+  binary:
+    name: Download binary for kkgal
+    needs: index
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built binary
+        uses: actions/download-artifact@v2
+        with:
+          name: bishojo
+      - name: Fix permission
+        run: chmod +x bishojo
+      - name: Download json database
+        uses: actions/download-artifact@v2
+        with:
+          name: database.json
+      - run: ./bishojo --timeout 100 -t 2 download-screenshots
+      - run: ./bishojo --timeout 100 -t 2 download-user-avatars --site kkgal
+      - name: Upload database
+        uses: actions/upload-artifact@v2
+        with:
+          name: database.bin
+          path: database.bin
+
