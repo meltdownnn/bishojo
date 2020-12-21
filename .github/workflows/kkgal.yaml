@@ -21,6 +21,7 @@ jobs:
   index:
     name: Index kkgal
     needs: build_and_test
+    runs-on: ubuntu-latest
     steps:
       - name: Download built binary
         uses: actions/download-artifact@v2
