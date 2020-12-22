@@ -422,10 +422,16 @@ async fn _main() {
                 }
                 for data in &database.1 .0 {
                     let data: (&String, &serde_bytes::ByteBuf) = data;
+                    let file_dot = data.0.rfind('.').unwrap_or(data.0.len() - 1);
                     job_vec.push(exec_future_and_return_vars(
                         (false, data.0.clone()),
                         tokio::fs::write(
-                            format!("{}/imgs/{}", i, hash_for_filename(data.0)),
+                            format!(
+                                "{}/imgs/{}.{}",
+                                i,
+                                hash_for_filename(&data.0[..file_dot]),
+                                &data.0[file_dot + 1..]
+                            ),
                             data.1.to_vec(),
                         ),
                     ));
@@ -473,10 +479,16 @@ async fn _main() {
                 }
                 for data in &database.1 .0 {
                     let data: (&String, &serde_bytes::ByteBuf) = data;
+                    let file_dot = data.0.rfind('.').unwrap_or(data.0.len() - 1);
                     job_vec.push(exec_future_and_return_vars(
                         (false, data.0.clone()),
                         tokio::fs::write(
-                            format!("{}/imgs/{}", i, hash_for_filename(data.0)),
+                            format!(
+                                "{}/imgs/{}.{}",
+                                i,
+                                hash_for_filename(&data.0[..file_dot]),
+                                &data.0[file_dot + 1..]
+                            ),
                             data.1.to_vec(),
                         ),
                     ));
@@ -691,7 +703,14 @@ fn html_generator(
             formatted
             //formatted.replace("\n", "\n")
         };
-        game_detail.push_str(&format!("<h3>Comments</h3>\n{}", game.comments.iter().map(|x| comments_constructor(x, offline_data)).collect::<Vec<_>>().join("\n")));
+        game_detail.push_str(&format!(
+            "<h3>Comments</h3>\n{}",
+            game.comments
+                .iter()
+                .map(|x| comments_constructor(x, offline_data))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ));
         constructed.push((to_legal_name(&game.name, game.id), game_detail))
     }
     constructed
