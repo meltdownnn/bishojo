@@ -136,7 +136,6 @@ impl KKGal {
             //);
             if std::env::var_os("USE_DIRECT").is_some() {
                 if let Ok(i) = client.send_async(Request::get(&site_link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await {
-                    println!("{:?}", i.headers());
                     site_link = i.headers().get("location").map(|x| x.to_str().map(|x| x.to_string()).unwrap_or(site_link.to_string())).unwrap_or(site_link)
                 }
             }
