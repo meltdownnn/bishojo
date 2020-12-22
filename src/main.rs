@@ -392,15 +392,13 @@ async fn _main() {
                 }
                 for data in &database.1 .0 {
                     let data: (&String, &serde_bytes::ByteBuf) = data;
-                    let suffix_position = data.0.rfind('.').unwrap_or(data.0.len() - 1);
                     job_vec.push(exec_future_and_return_vars(
                         (false, data.0.clone()),
                         tokio::fs::write(
                             format!(
-                                "{}/imgs/{}.{}",
+                                "{}/imgs/{}",
                                 i,
-                                &data.0[..suffix_position],
-                                &data.0[suffix_position + 1..]
+                                hash_for_filename(data.0)
                             ),
                             data.1.to_vec(),
                         ),
