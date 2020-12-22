@@ -80,7 +80,7 @@ impl KKGal {
             .map_err(|x| format!("Error while deserializing script: {}", x))?;
         let mut constructed = Vec::new();
         for detail in parsed_detail {
-            let site_link = format!("{}/{}", url, &detail.name);
+            let mut site_link = format!("{}/{}", url, &detail.name);
             let mut date_and_time: std::str::SplitWhitespace = detail.date.split_whitespace();
             let mut date = date_and_time
                 .next()
@@ -134,6 +134,13 @@ impl KKGal {
             //        date.to_string()
             //    ),
             //);
+            if std::env::var("USE_DIRECT").is_ok() {
+                site_link = if let Ok(i) = client.send_async(Request::get(&site_link).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await {
+                    i.headers().get("Location").map(|x| x.to_str().map(|x| x.to_string()).unwrap_or(site_link.to_string())).unwrap_or(site_link)
+                } else {
+                    site_link
+                }
+            }
             let size = byte_unit::Byte::from_str(&detail.size)
                 .ok()
                 .map(|x| x.get_bytes());
