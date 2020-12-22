@@ -1,5 +1,6 @@
 name: Default actions
-on: push
+on: schedule:
+  - cron: "0 0 * * */2"
 jobs:
   build_and_test:
     name: Build and test
