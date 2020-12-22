@@ -417,7 +417,7 @@ async fn _main() {
                 for page in generated_pages {
                     job_vec.push(exec_future_and_return_vars(
                         (true, page.0.clone()),
-                        tokio::fs::write(format!("{}/{}.md", i, page.0), page.1.into_bytes()),
+                        tokio::fs::write(format!("{}/{}.html", i, page.0), page.1.into_bytes()),
                     ));
                 }
                 for data in &database.1 .0 {
