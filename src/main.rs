@@ -193,7 +193,7 @@ async fn _main() {
                 }
             }
         }
-        cli::ApplicationSubCommand::DownloadScreenshots { game_id, overwrite } => {
+        cli::ApplicationSubCommand::DownloadImages { game_id, overwrite } => {
             let id_hashmap = match game_id.len() {
                 0 => None,
                 _ => {

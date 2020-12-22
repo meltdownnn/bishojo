@@ -39,7 +39,7 @@ pub enum ApplicationSubCommand {
         #[structopt(short, long)]
         overwrite: bool,
     },
-    DownloadScreenshots {
+    DownloadImages {
         #[structopt(long)]
         game_id: Vec<u64>,
         #[structopt(short, long)]
