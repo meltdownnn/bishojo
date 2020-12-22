@@ -144,7 +144,7 @@ impl KKGal {
             let size = byte_unit::Byte::from_str(&detail.size)
                 .ok()
                 .map(|x| x.get_bytes());
-            constructed.push((detail.name, (site_link, size)));
+            constructed.push((percent_encoding::percent_decode_str(&detail.name).decode_utf8_lossy().to_string(), (site_link, size)));
         }
         Ok(constructed)
     }

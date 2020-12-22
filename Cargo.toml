@@ -23,6 +23,7 @@ base64 = "0.13"
 tokio = { version = "0.3", features = ["rt-multi-thread", "macros", "fs", "io-util"] }
 seahash = "4.0"
 byte-unit = "4.0"
+percent-encoding = "2.1"
 rusthtml = { git = "https://github.com/meltdownnn/rusthtml.git" }
 pool-future = { git = "https://github.com/meltdownnn/pool-future.git" }
 unescape = { git = "https://github.com/meltdownnn/unescape-rs.git" }

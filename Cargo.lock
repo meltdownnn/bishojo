@@ -59,6 +59,7 @@ dependencies = [
  "colored",
  "futures",
  "isahc",
+ "percent-encoding",
  "pool-future",
  "rmp-serde",
  "rusthtml",
