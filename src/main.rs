@@ -646,7 +646,7 @@ fn html_generator(
                         x.0,
                         x.0,
                         if let Some(i) = x.1 .1 {
-                            byte_unit::Byte::from_bytes(i).to_string()
+                            byte_unit::Byte::from_bytes(i).get_appropriate_unit(true).to_string()
                         } else {
                             String::new()
                         }
@@ -761,7 +761,7 @@ fn markdown_generator(
                     x.0,
                     x.1 .0,
                     if let Some(i) = x.1 .1 {
-                        byte_unit::Byte::from_bytes(i).to_string()
+                        byte_unit::Byte::from_bytes(i).get_appropriate_unit(true).to_string()
                     } else {
                         String::new()
                     }
