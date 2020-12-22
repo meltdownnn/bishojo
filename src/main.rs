@@ -576,18 +576,13 @@ fn html_generator(
         <meta charset="utf-8">
         <title>{}</title>
         <style type="text/css">
-            html, body {{
-                height: 100%;
+            *
+            {{
+                text-align: center !important;
+                margin: auto !important;
             }}
-
-            html {{
-                display: table;
-                margin: auto;
-            }}
-
             body {{
-                display: table-cell;
-                vertical-align: middle;
+                padding: 0 100px;
             }}
         </style>
     </head>
@@ -596,6 +591,7 @@ fn html_generator(
         <h1>Galgame</h1>
         <p><small>id: {}@{} | published at {} | {} viewed</small></p>
         <p>Tags: {}</p>
+        <br>
         "#,
             game.name,
             game.id.to_string(),
@@ -610,7 +606,7 @@ fn html_generator(
                 content_rendered.push_str(&match content {
                     saved::ParagraphContent::Text(i) => format!("<p>{}</p>", i),
                     saved::ParagraphContent::Image(i) => format!(
-                        "<img src={}>",
+                        "<img src={} width=\"50%\">",
                         find_offline_data_or_use_remove(i.to_string(), offline_data)
                     ),
                 });
@@ -621,14 +617,15 @@ fn html_generator(
                 paragraph
                     .0
                     .as_ref()
-                    .map(|x| format!("<h2>{}</h2>", x))
+                    .map(|x| format!("<h3>{}</h3>", x))
                     .unwrap_or(String::new()),
                 content_rendered.replace('\n', "\n        ")
-            ))
+            ));
+            game_detail.push_str("<br>");
         }
         game_detail.push_str(
             &format!(
-                "        <h2>Downloads</h2>\n<ul>\n    {}\n</ul>",
+                "        <h3>Downloads</h3>\n<ul>\n    {}\n</ul>\n<br>",
                 game.files
                     .iter()
                     .map(|x| format!(
@@ -672,14 +669,14 @@ fn html_generator(
                 match i {
                     saved::ParagraphContent::Text(i) => content.push_str(&format!("<p>{}</p>", i)),
                     saved::ParagraphContent::Image(i) => content.push_str(&format!(
-                        "<img src={}>",
+                        "<img src={} width=\"40%\">",
                         find_offline_data_or_use_remove(i.to_string(), offline_data)
                     )),
                 }
                 content.push('\n');
             }
             let formatted = format!(
-                r#"\n<article> <img src="{}"> {} said on {}:\n<p>{}</p>\n{}</article>"#,
+                "\n<article> <img src=\"{}\" width=\"10%\"> {} said on {}:\n<p>{}</p>\n{}</article>",
                 avatar_link,
                 comment.author,
                 comment.date.to_string(),
@@ -694,7 +691,7 @@ fn html_generator(
             formatted
             //formatted.replace("\n", "\n")
         };
-        game_detail.push_str(&format!("<h2>Comments</h2>\n{}", game.comments.iter().map(|x| comments_constructor(x, offline_data)).collect::<Vec<_>>().join("\n")));
+        game_detail.push_str(&format!("<h3>Comments</h3>\n{}", game.comments.iter().map(|x| comments_constructor(x, offline_data)).collect::<Vec<_>>().join("\n")));
         constructed.push((to_legal_name(&game.name, game.id), game_detail))
     }
     constructed
