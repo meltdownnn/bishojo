@@ -32,7 +32,7 @@ jobs:
           name: bishojo
       - name: Fix permission
         run: chmod +x bishojo
-      - run: ./bishojo --timeout 100 -t 2 fetch-metadata --end-page 95 --start-page 1 --site kkgal
+      - run: ./bishojo -r 20 -t 2 --timeout 15000 fetch-metadata --end-page 200 --site kkgal --start-page 1
       - name: Upload database
         uses: actions/upload-artifact@v2
         with:
@@ -53,8 +53,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: database.json
-      - run: ./bishojo --timeout 100 -t 2 download-screenshots
-      - run: ./bishojo --timeout 100 -t 2 download-user-avatars --site kkgal
+      - run: ./bishojo --timeout 15000 -r 20 -t 2 download-screenshots
+      # Avatars are not downloaded since it'll make the website ban us for some reason.
+      #- run: ./bishojo --timeout 15000 -r 20 -t 2 download-user-avatars --site kkgal
       - name: Upload database
         uses: actions/upload-artifact@v2
         with:
