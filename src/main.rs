@@ -23,7 +23,7 @@ async fn _main() {
         ),
     );
     let http_client = isahc::HttpClientBuilder::new()
-        .timeout(std::time::Duration::from_secs(arguments.timeout))
+        .connect_timeout(std::time::Duration::from_secs(arguments.timeout))
         .redirect_policy(isahc::config::RedirectPolicy::Limit(10))
         .auto_referer()
         .tcp_nodelay()
