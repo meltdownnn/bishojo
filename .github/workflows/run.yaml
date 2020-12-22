@@ -35,8 +35,8 @@ jobs:
       - name: Fix permission
         run: chmod +x bishojo
       - run: ./bishojo -r 20 -t 2 --timeout 15000 fetch-metadata --end-page 200 --site kkgal --start-page 1
-        env: 
-          USE_DIRECT: true
+        #env: 
+          #USE_DIRECT: true
       - name: Upload database
         uses: actions/upload-artifact@v2
         with:
