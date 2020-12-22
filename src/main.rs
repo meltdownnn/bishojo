@@ -641,9 +641,10 @@ fn html_generator(
                 game.files
                     .iter()
                     .map(|x| format!(
-                        "<li>{} ({} | {})</li>",
-                        x.0,
+                        "<li><a href=\"{}\" download=\"{}\">{}</a> {}</li>",
                         x.1 .0,
+                        x.0,
+                        x.0,
                         if let Some(i) = x.1 .1 {
                             byte_unit::Byte::from_bytes(i).to_string()
                         } else {
