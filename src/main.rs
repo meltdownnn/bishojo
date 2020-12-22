@@ -344,9 +344,9 @@ async fn _main() {
                     )
                 })
                 .filter(|x| {
-                    no_overwrite
+                    !(no_overwrite
                         && std::path::Path::new(&format!("{}{}/{}", download_path, x.1, x.0 .0))
-                            .is_file()
+                            .is_file())
                 })
                 .collect();
             games.iter().for_each(|x| {
