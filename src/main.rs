@@ -76,7 +76,20 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x,
-                        exec_future_with_retry((0..retry).into_iter().map(|_| structure.fetch_metadata(x, overwrite, &immutable_database, &http_client, &logging_client)).collect()),
+                        exec_future_with_retry(
+                            (0..retry)
+                                .into_iter()
+                                .map(|_| {
+                                    structure.fetch_metadata(
+                                        x,
+                                        overwrite,
+                                        &immutable_database,
+                                        &http_client,
+                                        &logging_client,
+                                    )
+                                })
+                                .collect(),
+                        ),
                     )
                 })
                 .collect();
@@ -136,11 +149,18 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x.0.clone(),
-                        exec_future_with_retry((0..retry).into_iter().map(|_| clients.get(&x.1).unwrap().download_user_avatars(
-                            x.0.clone(),
-                            &http_client,
-                            &logging_client,
-                        )).collect()),
+                        exec_future_with_retry(
+                            (0..retry)
+                                .into_iter()
+                                .map(|_| {
+                                    clients.get(&x.1).unwrap().download_user_avatars(
+                                        x.0.clone(),
+                                        &http_client,
+                                        &logging_client,
+                                    )
+                                })
+                                .collect(),
+                        ),
                     )
                 })
                 .collect();
@@ -173,10 +193,7 @@ async fn _main() {
                 }
             }
         }
-        cli::ApplicationSubCommand::DownloadScreenshots {
-            game_id,
-            overwrite,
-        } => {
+        cli::ApplicationSubCommand::DownloadScreenshots { game_id, overwrite } => {
             let id_hashmap = match game_id.len() {
                 0 => None,
                 _ => {
@@ -204,11 +221,7 @@ async fn _main() {
                             .map(|j| {
                                 j.1.iter()
                                     .map(|a| {
-                                        (
-                                            a,
-                                            cli::AvailableWebsite::from_str(&x.website).unwrap(),
-                                            x,
-                                        )
+                                        (a, cli::AvailableWebsite::from_str(&x.website).unwrap(), x)
                                     })
                                     .collect::<Vec<_>>()
                             })
@@ -239,12 +252,19 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         x.0.clone(),
-                        exec_future_with_retry((0..retry).into_iter().map(|_| clients.get(&x.1).unwrap().download_screenshot(
-                            x.0.clone(),
-                            x.2,
-                            &http_client,
-                            &logging_client,
-                        )).collect()),
+                        exec_future_with_retry(
+                            (0..retry)
+                                .into_iter()
+                                .map(|_| {
+                                    clients.get(&x.1).unwrap().download_screenshot(
+                                        x.0.clone(),
+                                        x.2,
+                                        &http_client,
+                                        &logging_client,
+                                    )
+                                })
+                                .collect(),
+                        ),
                     )
                 })
                 .collect();
@@ -292,7 +312,11 @@ async fn _main() {
             if !std::path::Path::new(&download_path).is_dir() {
                 std::fs::create_dir(&download_path).unwrap();
             }
-            let games: Vec<((String, (String, Option<u128>)), String, &saved::GameTextInformation)> = database
+            let games: Vec<(
+                (String, (String, Option<u128>)),
+                String,
+                &saved::GameTextInformation,
+            )> = database
                 .0
                 .iter()
                 .filter(|x| id_hashmap.get(&x.id).is_some())
@@ -334,18 +358,27 @@ async fn _main() {
                 .map(|x| {
                     exec_future_and_return_vars(
                         (x.0 .0.clone(), x.1.clone()),
-                        exec_future_with_retry((0..retry).into_iter().map(|_| clients
-                            .get(&cli::AvailableWebsite::from_str(&x.2.website).unwrap())
-                            .unwrap()
-                            .download_game(
-                                x.0 .1.0.clone(),
-                                x.2,
-                                format!("{}{}/{}", download_path, x.1, x.0 .0),
-                                x.0.1.1,
-                                &http_client,
-                                &logging_client,
-                                cache_size.get_bytes() as usize,
-                            )).collect()),
+                        exec_future_with_retry(
+                            (0..retry)
+                                .into_iter()
+                                .map(|_| {
+                                    clients
+                                        .get(
+                                            &cli::AvailableWebsite::from_str(&x.2.website).unwrap(),
+                                        )
+                                        .unwrap()
+                                        .download_game(
+                                            x.0 .1 .0.clone(),
+                                            x.2,
+                                            format!("{}{}/{}", download_path, x.1, x.0 .0),
+                                            x.0 .1 .1,
+                                            &http_client,
+                                            &logging_client,
+                                            cache_size.get_bytes() as usize,
+                                        )
+                                })
+                                .collect(),
+                        ),
                     )
                 })
                 .collect();
@@ -367,8 +400,56 @@ async fn _main() {
             html_location,
             prefer_online,
         } => {
-            if let Some(_) = html_location {
-                unimplemented!()
+            if let Some(i) = html_location {
+                if !std::path::Path::new(&i).is_dir() {
+                    std::fs::create_dir_all(format!("{}/imgs", i)).unwrap();
+                }
+                let generated_pages = html_generator(
+                    &database.0,
+                    if prefer_online {
+                        None
+                    } else {
+                        Some(&database.1)
+                    },
+                );
+                logging_client.log(log::LoggingLevel::Message, "Html pages exported.");
+                let mut job_vec = Vec::new();
+                for page in generated_pages {
+                    job_vec.push(exec_future_and_return_vars(
+                        (true, page.0.clone()),
+                        tokio::fs::write(format!("{}/{}.md", i, page.0), page.1.into_bytes()),
+                    ));
+                }
+                for data in &database.1 .0 {
+                    let data: (&String, &serde_bytes::ByteBuf) = data;
+                    job_vec.push(exec_future_and_return_vars(
+                        (false, data.0.clone()),
+                        tokio::fs::write(
+                            format!("{}/imgs/{}", i, hash_for_filename(data.0)),
+                            data.1.to_vec(),
+                        ),
+                    ));
+                }
+                // I don't think tokio fs write need to retry.
+                let mut job_queue: futures::stream::FuturesUnordered<_> =
+                    job_vec.into_iter().collect();
+                while let Some(i) = job_queue.next().await {
+                    if let Err(j) = i.1 {
+                        logging_client.log(
+                            log::LoggingLevel::Warning,
+                            &format!("Error while writing {} to disk: {}", i.0 .1, j.to_string()),
+                        );
+                    } else {
+                        logging_client.log(
+                            log::LoggingLevel::StatusReport,
+                            &format!(
+                                "{} {} written.",
+                                i.0 .1,
+                                if i.0 .0 { "html" } else { "image" }
+                            ),
+                        );
+                    }
+                }
             }
             if let Some(i) = markdown_location {
                 if !std::path::Path::new(&i).is_dir() {
@@ -395,11 +476,7 @@ async fn _main() {
                     job_vec.push(exec_future_and_return_vars(
                         (false, data.0.clone()),
                         tokio::fs::write(
-                            format!(
-                                "{}/imgs/{}",
-                                i,
-                                hash_for_filename(data.0)
-                            ),
+                            format!("{}/imgs/{}", i, hash_for_filename(data.0)),
                             data.1.to_vec(),
                         ),
                     ));
@@ -440,51 +517,195 @@ async fn exec_future_and_return_vars<T, U: std::future::Future>(
 ) -> (T, U::Output) {
     (vars, function.await)
 }
-async fn exec_future_with_retry<V, W: std::fmt::Display, U: std::future::Future<Output = Result<V, W>>>(functions: Vec<U>) -> Result<V, String> {
+async fn exec_future_with_retry<
+    V,
+    W: std::fmt::Display,
+    U: std::future::Future<Output = Result<V, W>>,
+>(
+    functions: Vec<U>,
+) -> Result<V, String> {
     let mut error_messages = Vec::with_capacity(functions.len());
     for i in functions {
         match i.await {
             Ok(i) => return Ok(i),
-            Err(i) => error_messages.push(i.to_string())
+            Err(i) => error_messages.push(i.to_string()),
         }
     }
     error_messages.dedup();
     Err(error_messages.join(", "))
+}
+fn find_offline_data_or_use_remove(
+    x: String,
+    offline_data: Option<&saved::GameBinaryDatabase>,
+) -> String {
+    if let Some(data) = offline_data {
+        if data.0.get(&x).is_some() {
+            let suffix_position = x.rfind('.').unwrap_or(x.len() - 1);
+            format!(
+                "imgs/{}.{}",
+                hash_for_filename(&x[..suffix_position]),
+                &x[suffix_position + 1..]
+            )
+        } else {
+            x
+        }
+    } else {
+        x
+    }
+}
+fn to_legal_name(name: &str, id: u64) -> String {
+    format!(
+        "{}_{}",
+        name.replace(
+            |x: char| !(x.is_whitespace() | x.is_alphabetic() | x.is_numeric()),
+            "_"
+        ),
+        id.to_string()
+    )
+}
+fn html_generator(
+    database: &saved::GameTextDatabase,
+    offline_data: Option<&saved::GameBinaryDatabase>,
+) -> Vec<(String, String)> {
+    let mut constructed = Vec::new();
+    for game in database {
+        let mut game_detail = format!(
+            r#"<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>{}</title>
+        <style type="text/css">
+            html, body {{
+                height: 100%;
+            }}
+
+            html {{
+                display: table;
+                margin: auto;
+            }}
+
+            body {{
+                display: table-cell;
+                vertical-align: middle;
+            }}
+        </style>
+    </head>
+    </head>
+    <body>
+        <h1>Galgame</h1>
+        <p><small>id: {}@{} | published at {} | {} viewed</small></p>
+        <p>Tags: {}</p>
+        "#,
+            game.name,
+            game.id.to_string(),
+            game.website,
+            game.published.to_string(),
+            game.viewed,
+            game.tags.join(", ")
+        );
+        for paragraph in &game.paragraphs {
+            let mut content_rendered = String::new();
+            for content in &paragraph.1 {
+                content_rendered.push_str(&match content {
+                    saved::ParagraphContent::Text(i) => format!("<p>{}</p>", i),
+                    saved::ParagraphContent::Image(i) => format!(
+                        "<img src={}>",
+                        find_offline_data_or_use_remove(i.to_string(), offline_data)
+                    ),
+                });
+                content_rendered.push('\n');
+            }
+            game_detail.push_str(&format!(
+                "{}\n{}",
+                paragraph
+                    .0
+                    .as_ref()
+                    .map(|x| format!("<h2>{}</h2>", x))
+                    .unwrap_or(String::new()),
+                content_rendered.replace('\n', "\n        ")
+            ))
+        }
+        game_detail.push_str(
+            &format!(
+                "        <h2>Downloads</h2>\n<ul>\n    {}\n</ul>",
+                game.files
+                    .iter()
+                    .map(|x| format!(
+                        "<li>{} ({} | {})</li>",
+                        x.0,
+                        x.1 .0,
+                        if let Some(i) = x.1 .1 {
+                            byte_unit::Byte::from_bytes(i).to_string()
+                        } else {
+                            String::new()
+                        }
+                    ))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+            .replace('\n', "\n        "),
+        );
+        fn comments_constructor(
+            comment: &saved::Comment,
+            offline_data: Option<&saved::GameBinaryDatabase>,
+        ) -> String {
+            let avatar_link = if let Some(data) = offline_data {
+                if data.0.get(&comment.user_avatar).is_some() {
+                    let avatar_suffix_location = comment
+                        .user_avatar
+                        .rfind('.')
+                        .unwrap_or(comment.user_avatar.len() - 1);
+                    format!(
+                        "imgs/{}.{}",
+                        hash_for_filename(&comment.user_avatar[..avatar_suffix_location]),
+                        &comment.user_avatar[avatar_suffix_location + 1..]
+                    )
+                } else {
+                    comment.user_avatar.clone()
+                }
+            } else {
+                comment.user_avatar.clone()
+            };
+            let mut content = String::new();
+            for i in &comment.content {
+                match i {
+                    saved::ParagraphContent::Text(i) => content.push_str(&format!("<p>{}</p>", i)),
+                    saved::ParagraphContent::Image(i) => content.push_str(&format!(
+                        "<img src={}>",
+                        find_offline_data_or_use_remove(i.to_string(), offline_data)
+                    )),
+                }
+                content.push('\n');
+            }
+            let formatted = format!(
+                r#"\n<article> <img src="{}"> {} said on {}:\n<p>{}</p>\n{}</article>"#,
+                avatar_link,
+                comment.author,
+                comment.date.to_string(),
+                content,
+                comment
+                    .replies
+                    .iter()
+                    .map(|x| comments_constructor(x, offline_data))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+            formatted
+            //formatted.replace("\n", "\n")
+        };
+        game_detail.push_str(&format!("<h2>Comments</h2>\n{}", game.comments.iter().map(|x| comments_constructor(x, offline_data)).collect::<Vec<_>>().join("\n")));
+        constructed.push((to_legal_name(&game.name, game.id), game_detail))
+    }
+    constructed
 }
 fn markdown_generator(
     database: &saved::GameTextDatabase,
     offline_data: Option<&saved::GameBinaryDatabase>,
 ) -> Vec<(String, String)> {
     let mut constructed = Vec::new();
-    fn find_offline_data_or_use_remove(
-        x: String,
-        offline_data: Option<&saved::GameBinaryDatabase>,
-    ) -> String {
-        if let Some(data) = offline_data {
-            if data.0.get(&x).is_some() {
-                let suffix_position = x.rfind('.').unwrap_or(x.len() - 1);
-                format!(
-                    "imgs/{}.{}",
-                    hash_for_filename(&x[..suffix_position]),
-                    &x[suffix_position + 1..]
-                )
-            } else {
-                x
-            }
-        } else {
-            x
-        }
-    };
     for game in database {
         let mut game_detail = format!("# {}\n\n", game.name);
-        let game_name = format!(
-            "{}_{}",
-            game.name.replace(
-                |x: char| !(x.is_whitespace() | x.is_alphabetic() | x.is_numeric()),
-                "_"
-            ),
-            game.id.to_string()
-        );
         game_detail.push_str(&format!(
             "> id: {}@{} | published at {} | {} viewed\n\n",
             game.id.to_string(),
@@ -518,7 +739,16 @@ fn markdown_generator(
             "## Downloads\n{}\n\n",
             game.files
                 .iter()
-                .map(|x| format!("- {}\n  {} {}", x.0, x.1.0, if let Some(i) = x.1.1 {byte_unit::Byte::from_bytes(i).to_string()} else {String::new()}))
+                .map(|x| format!(
+                    "- {}\n  {} {}",
+                    x.0,
+                    x.1 .0,
+                    if let Some(i) = x.1 .1 {
+                        byte_unit::Byte::from_bytes(i).to_string()
+                    } else {
+                        String::new()
+                    }
+                ))
                 .collect::<Vec<_>>()
                 .join("\n")
         ));
@@ -577,7 +807,7 @@ fn markdown_generator(
                 .collect::<Vec<_>>()
                 .join("\n")
         ));
-        constructed.push((game_name, game_detail))
+        constructed.push((to_legal_name(&game.name, game.id), game_detail))
     }
     constructed
 }
