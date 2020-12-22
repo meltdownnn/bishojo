@@ -304,6 +304,12 @@ async fn _main() {
             cache_size,
         } => {
             let mut id_hashmap = std::collections::HashMap::new();
+            if game_id.len() == 0 {
+                logging_client.log(log::LoggingLevel::Warning, "Downloading all games");
+                database.0.iter().for_each(|x| {
+                    id_hashmap.insert(x.id, ());
+                });
+            }
             game_id.into_iter().for_each(|x| {
                 id_hashmap.insert(x, ());
             });
@@ -646,7 +652,9 @@ fn html_generator(
                         x.0,
                         x.0,
                         if let Some(i) = x.1 .1 {
-                            byte_unit::Byte::from_bytes(i).get_appropriate_unit(true).to_string()
+                            byte_unit::Byte::from_bytes(i)
+                                .get_appropriate_unit(true)
+                                .to_string()
                         } else {
                             String::new()
                         }
@@ -761,7 +769,9 @@ fn markdown_generator(
                     x.0,
                     x.1 .0,
                     if let Some(i) = x.1 .1 {
-                        byte_unit::Byte::from_bytes(i).get_appropriate_unit(true).to_string()
+                        byte_unit::Byte::from_bytes(i)
+                            .get_appropriate_unit(true)
+                            .to_string()
                     } else {
                         String::new()
                     }

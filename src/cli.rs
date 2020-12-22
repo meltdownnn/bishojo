@@ -52,7 +52,7 @@ pub enum ApplicationSubCommand {
         no_overwrite: bool,
         #[structopt(long, default_value = "Downloads/")]
         download_path: String,
-        #[structopt(long, default_value = "1_048_576")]
+        #[structopt(long, default_value = "1048576")]
         cache_size: byte_unit::Byte,
     },
     Export {
