@@ -664,6 +664,9 @@ impl super::GalgameWebsite for KKGal {
         let builder = if std::env::var_os("KKGAL_DOWN_NO_PROXY").is_some() {
             let link = http_client.send_async(Request::get(link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await.map_err(|x| x.to_string())?.headers().get("location").ok_or(String::from("Unable to find location header"))?.to_str().map_err(|x| x.to_string())?.to_string();
             Request::get(link).proxy(None)
+        } else if let Ok(i) = std::env::var("KKGAL_DOWN_PROXY") {
+            let link = http_client.send_async(Request::get(link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await.map_err(|x| x.to_string())?.headers().get("location").ok_or(String::from("Unable to find location header"))?.to_str().map_err(|x| x.to_string())?.to_string();
+            Request::get(link).proxy(Some(i.parse().unwrap()))
         } else {
             Request::get(link)
         };
