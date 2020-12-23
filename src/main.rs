@@ -313,7 +313,7 @@ async fn _main() {
                 id_hashmap.insert(x, ());
             });
             let illegal_character_check =
-                |x: char| !(x.is_numeric() | x.is_alphabetic() | x.is_whitespace());
+                |x: char| (x == '/') | (x == '\u{0000}');
             if !std::path::Path::new(&download_path).is_dir() {
                 std::fs::create_dir(&download_path).unwrap();
             }
@@ -561,7 +561,7 @@ fn to_legal_name(name: &str, id: u64) -> String {
     format!(
         "{}_{}",
         name.replace(
-            |x: char| !(x.is_whitespace() | x.is_alphabetic() | x.is_numeric()),
+            |x: char| (x == '/') | (x == '\u{0000}'),
             "_"
         ),
         id.to_string()
