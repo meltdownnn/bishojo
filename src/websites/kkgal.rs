@@ -134,7 +134,8 @@ impl KKGal {
             //        date.to_string()
             //    ),
             //);
-            if std::env::var_os("USE_DIRECT").is_some() {
+            //FIXME: this is discouraged.
+            if std::env::var_os("KKGAL_USE_DIRECT").is_some() {
                 if let Ok(i) = client.send_async(Request::get(&site_link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await {
                     site_link = i.headers().get("location").map(|x| x.to_str().map(|x| x.to_string()).unwrap_or(site_link.to_string())).unwrap_or(site_link)
                 }
@@ -652,7 +653,6 @@ impl super::GalgameWebsite for KKGal {
             .map_err(|x| x.to_string())?;
         Ok(result)
     }
-    // TODO: add direct link support
     async fn download_game(
         &self,
         link: String,
@@ -661,7 +661,13 @@ impl super::GalgameWebsite for KKGal {
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
     ) -> Result<(), String> {
-        let response = http_client.send_async(Request::get(link).header(isahc::http::header::REFERER, WEBSITE_LINK).metrics(true).body(()).map_err(|x| x.to_string())?);
+        let builder = if std::env::var_os("KKGAL_DOWN_NO_PROXY").is_some() {
+            let link = http_client.send_async(Request::get(link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await.map_err(|x| x.to_string())?.headers().get("location").ok_or(String::from("Unable to find location header"))?.to_str().map_err(|x| x.to_string())?.to_string();
+            Request::get(link).proxy(None)
+        } else {
+            Request::get(link)
+        };
+        let response = http_client.send_async(builder.header(isahc::http::header::REFERER, WEBSITE_LINK).metrics(true).body(()).map_err(|x| x.to_string())?);
         super::game_download_helper(response, &file, log_client).await
     }
 }
