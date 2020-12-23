@@ -24,6 +24,7 @@ tokio = { version = "0.3", features = ["rt-multi-thread", "macros", "fs", "io-ut
 seahash = "4.0"
 byte-unit = "4.0"
 percent-encoding = "2.1"
+humantime = "2.0"
 rusthtml = { git = "https://github.com/meltdownnn/rusthtml.git" }
 pool-future = { git = "https://github.com/meltdownnn/pool-future.git" }
 unescape = { git = "https://github.com/meltdownnn/unescape-rs.git" }

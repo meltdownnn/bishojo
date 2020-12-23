@@ -1,8 +1,6 @@
 use async_trait::async_trait;
-use futures::io::AsyncReadExt;
 use futures::FutureExt;
 use isahc::prelude::*;
-use tokio::io::AsyncWriteExt;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 pub mod kkgal;
 #[async_trait]
@@ -49,18 +47,25 @@ async fn game_download_helper<'a>(
         .await
         .map_err(|x| x.to_string())?;
     async fn logger(log_client: &crate::log::LoggingClient, metrics: &isahc::Metrics, file: &str) {
+        let mut last_byte_count = 0;
+        let mut last_timestamp = std::time::Instant::now();
         loop {
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            let progress = metrics.download_progress().0 as f64 / metrics.download_progress().1 as f64;
+            let speed = (metrics.download_progress().0 - last_byte_count) as f64 / last_timestamp.elapsed().as_secs_f64();
+            last_byte_count = metrics.download_progress().0;
+            last_timestamp = std::time::Instant::now();
             log_client.log(
                 crate::log::LoggingLevel::StatusReport,
                 &format!(
-                    "{} {} {} {}/s",
+                    "{} => {} {}({:.2}%) {}/s",
                     file,
-                    metrics.total_time().as_secs(),
+                    humantime::format_duration(std::time::Duration::from_secs(metrics.total_time().as_secs())),
                     byte_unit::Byte::from_bytes(metrics.download_progress().0 as u128)
                         .get_appropriate_unit(true)
                         .to_string(),
-                    byte_unit::Byte::from_bytes(metrics.download_speed() as u128)
+                    progress,
+                    byte_unit::Byte::from_bytes(speed as u128)
                         .get_appropriate_unit(true)
                         .to_string()
                 ),
