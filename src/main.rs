@@ -301,7 +301,6 @@ async fn _main() {
             game_id,
             no_overwrite,
             download_path,
-            cache_size,
         } => {
             let mut id_hashmap = std::collections::HashMap::new();
             if game_id.len() == 0 {
@@ -359,7 +358,7 @@ async fn _main() {
                 let website = cli::AvailableWebsite::from_str(&x.2.website).unwrap();
                 clients.insert(website.to_owned(), website.to_struct());
             });
-            let mut job_queue: futures::stream::FuturesUnordered<_> = games
+            let job_queue: Vec<_> = games
                 .into_iter()
                 .map(|x| {
                     exec_future_and_return_vars(
@@ -377,10 +376,8 @@ async fn _main() {
                                             x.0 .1 .0.clone(),
                                             x.2,
                                             format!("{}{}/{}", download_path, x.1, x.0 .0),
-                                            x.0 .1 .1,
                                             &http_client,
                                             &logging_client,
-                                            cache_size.get_bytes() as usize,
                                         )
                                 })
                                 .collect(),
@@ -388,18 +385,7 @@ async fn _main() {
                     )
                 })
                 .collect();
-            while let Some(i) = job_queue.next().await {
-                match i.1 {
-                    Ok(()) => logging_client.log(
-                        log::LoggingLevel::StatusReport,
-                        &format!("Downloaded game {}/{}", i.0 .0, i.0 .1),
-                    ),
-                    Err(j) => logging_client.log(
-                        log::LoggingLevel::Warning,
-                        &format!("Error while downloading game {}/{}: {}", i.0 .0, i.0 .1, j),
-                    ),
-                }
-            }
+            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(50)).execute_till_complete().await;
         }
         cli::ApplicationSubCommand::Export {
             markdown_location,

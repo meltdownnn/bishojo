@@ -1,6 +1,9 @@
 use async_trait::async_trait;
 use futures::io::AsyncReadExt;
+use futures::FutureExt;
+use isahc::prelude::*;
 use tokio::io::AsyncWriteExt;
+use tokio_util::compat::FuturesAsyncReadCompatExt;
 pub mod kkgal;
 #[async_trait]
 pub trait GalgameWebsite {
@@ -30,85 +33,42 @@ pub trait GalgameWebsite {
         link: String,
         game_info: &crate::saved::GameTextInformation,
         file: String,
-        predicted_size: Option<u128>,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
-        cache_size: usize,
-        // TODO: add direct link support
     ) -> Result<(), String>;
 }
 async fn game_download_helper<'a>(
     response: isahc::ResponseFuture<'a>,
     file: &str,
     log_client: &crate::log::LoggingClient,
-    cache_size: usize,
-    predicted_size: Option<u128>
 ) -> Result<(), String> {
-    let mut response = response.await.map_err(|x| x.to_string())?;
-    let stream = response.body_mut();
+    let mut response_mapped = response.await.map_err(|x| x.to_string())?;
+    let metrics = response_mapped.metrics().unwrap().clone();
+    let mut stream = response_mapped.body_mut().compat();
     let mut file_handle = tokio::fs::File::create(file)
         .await
         .map_err(|x| x.to_string())?;
-    let file = &file[file.rfind('/').unwrap_or(0)..];
-    let mut file_size = 0;
-    //futures::io::copy(stream, &mut file_handle.compat_write()).await.map_err(|x| x.to_string()).map(|_| ())
-    let mut cache_vector = Vec::with_capacity(cache_size);
-    let mut last_instant = std::time::Instant::now();
-    let first_instant =
-        time::OffsetDateTime::try_now_local().unwrap_or(time::OffsetDateTime::now_utc());
-    let mut last_len = 0;
-    log_client.log(
-        crate::log::LoggingLevel::Message,
-        &format!(
-            "Download for {} started at {}",
-            file,
-            first_instant.to_string()
-        ),
-    );
-    loop {
-        let output_len = stream
-            .read(&mut cache_vector)
-            .await
-            .map_err(|x| x.to_string())?;
-        file_handle
-            .write_all(&cache_vector)
-            .await
-            .map_err(|x| x.to_string())?;
-        file_size += output_len;
-        let file_size_appropriate =
-            byte_unit::Byte::from_bytes(file_size as u128).get_appropriate_unit(true);
-        if output_len == 0 {
-            file_handle.sync_all().await.map_err(|x| x.to_string())?;
-            log_client.log(
-                crate::log::LoggingLevel::Message,
-                &format!(
-                    "{} downloaded - {}",
-                    file,
-                    file_size_appropriate.to_string()
-                ),
-            );
-            return Ok(());
-        }
-        if last_instant.elapsed() > std::time::Duration::from_secs(2) {
-            let speed = (file_size - last_len) as f64 / last_instant.elapsed().as_secs_f64();
-            let speed = byte_unit::Byte::from_bytes(speed as u128).get_appropriate_unit(true);
+    async fn logger(log_client: &crate::log::LoggingClient, metrics: &isahc::Metrics, file: &str) {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             log_client.log(
                 crate::log::LoggingLevel::StatusReport,
                 &format!(
-                    "{} {} {}| {}/s",
+                    "{} {} {} {}/s",
                     file,
-                    file_size_appropriate.to_string(),
-                    if let Some(i) = predicted_size {
-                        let precentage = (file_size as f64 / i as f64 * 100 as f64) as u8;
-                        format!("{}% ", precentage)
-                    } else {
-                        String::new()
-                    },
-                    speed.to_string()
+                    metrics.total_time().as_secs(),
+                    byte_unit::Byte::from_bytes(metrics.download_progress().0 as u128)
+                        .get_appropriate_unit(true)
+                        .to_string(),
+                    byte_unit::Byte::from_bytes(metrics.download_speed() as u128)
+                        .get_appropriate_unit(true)
+                        .to_string()
                 ),
-            );
-            last_instant = std::time::Instant::now();
-            last_len = file_size;
+            )
         }
+    }
+    futures::select! {
+        result = tokio::io::copy(&mut stream, &mut file_handle).fuse() => return result.map_err(|x| x.to_string()).map(|_| ()),
+        _ = logger(log_client, &metrics, file).fuse() => Err(String::from("Error while waiting logger to finish")),
     }
 }

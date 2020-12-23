@@ -658,12 +658,10 @@ impl super::GalgameWebsite for KKGal {
         link: String,
         _: &crate::saved::GameTextInformation,
         file: String,
-        predicted_size: Option<u128>,
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
-        cache_size: usize,
     ) -> Result<(), String> {
-        let response = http_client.get_async(link);
-        super::game_download_helper(response, &file, log_client, cache_size, predicted_size).await
+        let response = http_client.send_async(Request::get(link).header(isahc::http::header::REFERER, WEBSITE_LINK).metrics(true).body(()).map_err(|x| x.to_string())?);
+        super::game_download_helper(response, &file, log_client).await
     }
 }
