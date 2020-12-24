@@ -1,11 +1,10 @@
 language: rust
-env:
-  global:
-    - GIT_SSH_COMMAND: "ssh -i ssh_key -o IdentitiesOnly=yes"
 install:
   - cargo build --release
 script:
-  - echo "${BISHOJO_PRIVATE_KEY}" > ssh_key
+  - mkdir -p ~/.ssh
+  - echo "${BISHOJO_PRIVATE_KEY}" > ~/.ssh/id_rsa
+  - echo "${BISHOJO_PUBLIC_KEY}" > ~/.ssh/id_rsa.pub
   - bash -c "git clone git@github.com:meltdownnn/bishojo-db.git"
   - bash -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
   - bash -c "[[ -f bishojo-db/database.bin ]] && (echo \"Using existing database from git\"; mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json) || true"
