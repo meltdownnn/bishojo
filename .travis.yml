@@ -3,8 +3,9 @@ install:
   - cargo build --release
 script:
   - mkdir -p ~/.ssh
-  - echo "${BISHOJO_PRIVATE_KEY}" > ~/.ssh/id_rsa
-  - echo "${BISHOJO_PUBLIC_KEY}" > ~/.ssh/id_rsa.pub
+  - mv ./id_rsa.pub ~/.ssh/id_rsa.pub
+  - openssl aes-256-cbc -d -a -in id_rsa.enc -pbkdf2 -out id_rsa -pass pass:${PASSPHRASE}
+  - mv id_rsa ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - bash -c "git clone git@github.com:meltdownnn/bishojo-db.git"
   - bash -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
