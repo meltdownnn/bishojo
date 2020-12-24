@@ -617,12 +617,12 @@ impl super::GalgameWebsite for KKGal {
         &self,
         avatar_url: String,
         http_client: &isahc::HttpClient,
-        _: &crate::log::LoggingClient,
+        logging_client: &crate::log::LoggingClient,
     ) -> Result<Vec<u8>, String> {
         let mut buffer = Vec::new();
         http_client
             .send_async(
-                Request::get(avatar_url)
+                Request::get(&avatar_url)
                     .header(isahc::http::header::CONNECTION, "keep-alive")
                     .body(())
                     .map_err(|x| x.to_string())?,
@@ -633,6 +633,8 @@ impl super::GalgameWebsite for KKGal {
             .read_to_end(&mut buffer)
             .await
             .map_err(|x| x.to_string())?;
+        tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+        logging_client.log(crate::log::LoggingLevel::StatusReport, &format!("Downloaded {}", avatar_url));
         Ok(buffer)
     }
     async fn download_screenshot(

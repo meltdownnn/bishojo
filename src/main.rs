@@ -139,12 +139,11 @@ async fn _main() {
                 log::LoggingLevel::Message,
                 &format!("Will download {} avatars", avatars.len()),
             );
-            let avatar_len = avatars.len();
             let mut clients = std::collections::HashMap::new();
             avatars.iter().for_each(|x| {
                 clients.insert(x.1, x.1.to_struct());
             });
-            let mut job_queue: futures::stream::FuturesUnordered<_> = avatars
+            let job_queue: Vec<_> = avatars
                 .into_iter()
                 .map(|x| {
                     exec_future_and_return_vars(
@@ -164,34 +163,7 @@ async fn _main() {
                     )
                 })
                 .collect();
-            let mut finished_count: usize = 0;
-            while let Some(i) = job_queue.next().await {
-                finished_count += 1;
-                match i.1 {
-                    Ok(j) => {
-                        database
-                            .1
-                             .0
-                            .insert(i.0.clone(), serde_bytes::ByteBuf::from(j));
-                        logging_client.log(
-                            log::LoggingLevel::StatusReport,
-                            &format!(
-                                "Downloaded avatar {} out of {} - {}",
-                                finished_count, avatar_len, i.0
-                            ),
-                        );
-                    }
-                    Err(j) => {
-                        logging_client.log(
-                            log::LoggingLevel::Warning,
-                            &format!(
-                                "Error while downloading {}th avatar ({}): {}",
-                                finished_count, i.0, j
-                            ),
-                        );
-                    }
-                }
-            }
+            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(3)).execute_till_complete().await;
         }
         cli::ApplicationSubCommand::DownloadImages { game_id, overwrite } => {
             let id_hashmap = match game_id.len() {
