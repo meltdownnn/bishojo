@@ -6,9 +6,9 @@ install:
   - cargo build --release
 script:
   - echo "${BISHOJO_PRIVATE_KEY}" > ssh_key
-  - sh -c "${GIT_SSH_COMMAND} git clone https://github.com/meltdownnn/bishojo-db.git"
-  - sh -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
-  - sh -c "[[ -f bishojo-db/database.bin ]] && (echo \"Using existing database from git\"; mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json) || true"
+  - bash -c "git clone https://github.com/meltdownnn/bishojo-db.git"
+  - bash -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
+  - bash -c "[[ -f bishojo-db/database.bin ]] && (echo \"Using existing database from git\"; mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json) || true"
   - cargo run --release -- -r 20 -t 2 --timeout 60 fetch-metadata --end-page 200 --site kkgal --start-page 1
   - cargo run --release -- -r 20 -t 2 download-images
   - cargo run --release -- -r 20 -t 2 download-user-avatars --site kkgal
@@ -16,7 +16,7 @@ script:
   - mv database.json bishojo-db/
   - git config --global user.name "meltdownnn"
   - git config --global user.email "75382863+meltdownnn@users.noreply.github.com"
-  - sh -c "cd bishojo-db; split -b 900m database.bin; rm database.bin; git add *; git commit -m \"Automatic build\";${GIT_SSH_COMMAND} git push"
+  - bash -c "cd bishojo-db; split -b 900m database.bin; rm database.bin; git add *; git commit -m \"Automatic build\";git push"
   - rm ssh_key
 cache:
   cargo: true
