@@ -6,7 +6,7 @@ install:
   - cargo build --release
 script:
   - echo "${BISHOJO_PRIVATE_KEY}" > ssh_key
-  - bash -c "git clone https://github.com/meltdownnn/bishojo-db.git"
+  - bash -c "git clone git@github.com:meltdownnn/bishojo-db.git"
   - bash -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
   - bash -c "[[ -f bishojo-db/database.bin ]] && (echo \"Using existing database from git\"; mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json) || true"
   - cargo run --release -- -r 20 -t 2 --timeout 60 fetch-metadata --end-page 200 --site kkgal --start-page 1
