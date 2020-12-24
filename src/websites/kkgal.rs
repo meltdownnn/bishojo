@@ -633,7 +633,7 @@ impl super::GalgameWebsite for KKGal {
             .read_to_end(&mut buffer)
             .await
             .map_err(|x| x.to_string())?;
-        tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(std::env::var("KKGAL_AVATAR_SLEEP_SEC").unwrap_or(String::from("4")).parse().unwrap())).await;
         logging_client.log(crate::log::LoggingLevel::StatusReport, &format!("Downloaded {}", avatar_url));
         Ok(buffer)
     }
