@@ -163,7 +163,21 @@ async fn _main() {
                     )
                 })
                 .collect();
-            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(3)).execute_till_complete().await;
+            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(3))
+                .execute_till_complete()
+                .await
+                .into_iter()
+                .for_each(|x| {
+                    match x.1 {
+                        Ok(i) => {
+                            database.1 .0.insert(x.0, serde_bytes::ByteBuf::from(i));
+                        }
+                        Err(i) => logging_client.log(
+                            log::LoggingLevel::Warning,
+                            &format!("Error while downloading avatar {}: {}", x.0, i),
+                        ),
+                    };
+                });
         }
         cli::ApplicationSubCommand::DownloadImages { game_id, overwrite } => {
             let id_hashmap = match game_id.len() {
@@ -284,8 +298,7 @@ async fn _main() {
             game_id.into_iter().for_each(|x| {
                 id_hashmap.insert(x, ());
             });
-            let illegal_character_check =
-                |x: char| (x == '/') | (x == '\u{0000}');
+            let illegal_character_check = |x: char| (x == '/') | (x == '\u{0000}');
             if !std::path::Path::new(&download_path).is_dir() {
                 std::fs::create_dir(&download_path).unwrap();
             }
@@ -357,7 +370,9 @@ async fn _main() {
                     )
                 })
                 .collect();
-            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(50)).execute_till_complete().await;
+            pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(50))
+                .execute_till_complete()
+                .await;
         }
         cli::ApplicationSubCommand::Export {
             markdown_location,
@@ -532,10 +547,7 @@ fn find_offline_data_or_use_remove(
 fn to_legal_name(name: &str, id: u64) -> String {
     format!(
         "{}_{}",
-        name.replace(
-            |x: char| (x == '/') | (x == '\u{0000}'),
-            "_"
-        ),
+        name.replace(|x: char| (x == '/') | (x == '\u{0000}'), "_"),
         id.to_string()
     )
 }
