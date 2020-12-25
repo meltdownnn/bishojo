@@ -4,12 +4,12 @@ install:
 script:
   - mkdir -p ~/.ssh
   - mv ./id_rsa.pub ~/.ssh/id_rsa.pub
-  - openssl aes-256-cbc -d -a -in id_rsa.enc -out id_rsa -pass pass:${PASSPHRASE}
+  - sh -c "openssl aes-256-cbc -d -a -in id_rsa.enc -out id_rsa -pass pass:${PASSPHRASE}"
   - mv id_rsa ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - bash -c "git clone git@github.com:meltdownnn/bishojo-db.git"
-  - bash -c "[[ -f bishojo-db/xaa ]] && (cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*)"
-  - bash -c "[[ -f bishojo-db/database.bin ]] && (echo \"Using existing database from git\"; mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json) || true"
+  - cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*
+  - mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json
   - cargo run --release -- -r 20 -t 2 --timeout 60 fetch-metadata --end-page 200 --site kkgal --start-page 1
   - cargo run --release -- -r 20 -t 2 download-images
   - cargo run --release -- -r 20 -t 2 download-user-avatars --site kkgal
