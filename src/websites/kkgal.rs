@@ -136,14 +136,36 @@ impl KKGal {
             //);
             //FIXME: this is discouraged.
             if std::env::var_os("KKGAL_USE_DIRECT").is_some() {
-                if let Ok(i) = client.send_async(Request::get(&site_link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await {
-                    site_link = i.headers().get("location").map(|x| x.to_str().map(|x| x.to_string()).unwrap_or(site_link.to_string())).unwrap_or(site_link)
+                if let Ok(i) = client
+                    .send_async(
+                        Request::get(&site_link)
+                            .redirect_policy(isahc::config::RedirectPolicy::None)
+                            .header(isahc::http::header::REFERER, WEBSITE_LINK)
+                            .body(())
+                            .map_err(|x| x.to_string())?,
+                    )
+                    .await
+                {
+                    site_link = i
+                        .headers()
+                        .get("location")
+                        .map(|x| {
+                            x.to_str()
+                                .map(|x| x.to_string())
+                                .unwrap_or(site_link.to_string())
+                        })
+                        .unwrap_or(site_link)
                 }
             }
             let size = byte_unit::Byte::from_str(&detail.size)
                 .ok()
                 .map(|x| x.get_bytes());
-            constructed.push((percent_encoding::percent_decode_str(&detail.name).decode_utf8_lossy().to_string(), (site_link, size)));
+            constructed.push((
+                percent_encoding::percent_decode_str(&detail.name)
+                    .decode_utf8_lossy()
+                    .to_string(),
+                (site_link, size),
+            ));
         }
         Ok(constructed)
     }
@@ -536,28 +558,21 @@ impl KKGal {
             }
         }
         if let Some(i) = constructed.miscellaneous.get("overall_link") {
-            if i.find("pan.baidu.com").is_none() {
-                match Self::download_file_information(i, http_client, log_client).await {
-                    Ok(i) => constructed.files = i,
-                    Err(j) => {
-                        log_client.log(
-                            crate::log::LoggingLevel::Warning,
-                            &format!(
-                                "Error while parsing download url: {}, storing it as pure text.",
-                                j
-                            ),
-                        );
-                        constructed.paragraphs.push((
-                            Some(String::from("Download link")),
-                            vec![crate::saved::ParagraphContent::Text(i.to_string())],
-                        ))
-                    }
+            match Self::download_file_information(i, http_client, log_client).await {
+                Ok(i) => constructed.files = i,
+                Err(j) => {
+                    log_client.log(
+                        crate::log::LoggingLevel::Warning,
+                        &format!(
+                            "Error while parsing download url: {}, storing it as unparsable link.",
+                            j
+                        ),
+                    );
+                    constructed.files = vec![(
+                        String::from("Download link"),
+                        (format!("Unparsable:{}", i), None),
+                    )]
                 }
-            } else {
-                constructed.paragraphs.push((
-                    Some(String::from("Download link")),
-                    vec![crate::saved::ParagraphContent::Text(i.to_string())],
-                ))
             }
         }
         constructed
@@ -633,8 +648,17 @@ impl super::GalgameWebsite for KKGal {
             .read_to_end(&mut buffer)
             .await
             .map_err(|x| x.to_string())?;
-        tokio::time::sleep(std::time::Duration::from_secs(std::env::var("KKGAL_AVATAR_SLEEP_SEC").unwrap_or(String::from("1")).parse().unwrap())).await;
-        logging_client.log(crate::log::LoggingLevel::StatusReport, &format!("Downloaded {}", avatar_url));
+        tokio::time::sleep(std::time::Duration::from_secs(
+            std::env::var("KKGAL_AVATAR_SLEEP_SEC")
+                .unwrap_or(String::from("1"))
+                .parse()
+                .unwrap(),
+        ))
+        .await;
+        logging_client.log(
+            crate::log::LoggingLevel::StatusReport,
+            &format!("Downloaded {}", avatar_url),
+        );
         Ok(buffer)
     }
     async fn download_screenshot(
@@ -655,7 +679,7 @@ impl super::GalgameWebsite for KKGal {
             .map_err(|x| x.to_string())?;
         Ok(result)
     }
-    async fn download_game(
+    async fn download_http_game(
         &self,
         link: String,
         _: &crate::saved::GameTextInformation,
@@ -664,15 +688,51 @@ impl super::GalgameWebsite for KKGal {
         log_client: &crate::log::LoggingClient,
     ) -> Result<(), String> {
         let builder = if std::env::var_os("KKGAL_DOWN_NO_PROXY").is_some() {
-            let link = http_client.send_async(Request::get(link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await.map_err(|x| x.to_string())?.headers().get("location").ok_or(String::from("Unable to find location header"))?.to_str().map_err(|x| x.to_string())?.to_string();
+            let link = http_client
+                .send_async(
+                    Request::get(link)
+                        .redirect_policy(isahc::config::RedirectPolicy::None)
+                        .header(isahc::http::header::REFERER, WEBSITE_LINK)
+                        .body(())
+                        .map_err(|x| x.to_string())?,
+                )
+                .await
+                .map_err(|x| x.to_string())?
+                .headers()
+                .get("location")
+                .ok_or(String::from("Unable to find location header"))?
+                .to_str()
+                .map_err(|x| x.to_string())?
+                .to_string();
             Request::get(link).proxy(None)
         } else if let Ok(i) = std::env::var("KKGAL_DOWN_PROXY") {
-            let link = http_client.send_async(Request::get(link).redirect_policy(isahc::config::RedirectPolicy::None).header(isahc::http::header::REFERER, WEBSITE_LINK).body(()).map_err(|x| x.to_string())?).await.map_err(|x| x.to_string())?.headers().get("location").ok_or(String::from("Unable to find location header"))?.to_str().map_err(|x| x.to_string())?.to_string();
+            let link = http_client
+                .send_async(
+                    Request::get(link)
+                        .redirect_policy(isahc::config::RedirectPolicy::None)
+                        .header(isahc::http::header::REFERER, WEBSITE_LINK)
+                        .body(())
+                        .map_err(|x| x.to_string())?,
+                )
+                .await
+                .map_err(|x| x.to_string())?
+                .headers()
+                .get("location")
+                .ok_or(String::from("Unable to find location header"))?
+                .to_str()
+                .map_err(|x| x.to_string())?
+                .to_string();
             Request::get(link).proxy(Some(i.parse().unwrap()))
         } else {
             Request::get(link)
         };
-        let response = http_client.send_async(builder.header(isahc::http::header::REFERER, WEBSITE_LINK).metrics(true).body(()).map_err(|x| x.to_string())?);
+        let response = http_client.send_async(
+            builder
+                .header(isahc::http::header::REFERER, WEBSITE_LINK)
+                .metrics(true)
+                .body(())
+                .map_err(|x| x.to_string())?,
+        );
         super::game_download_helper(response, &file, log_client).await
     }
 }

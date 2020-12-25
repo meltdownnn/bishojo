@@ -3,6 +3,7 @@ use futures::FutureExt;
 use isahc::prelude::*;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 pub mod kkgal;
+pub mod liuli;
 #[async_trait]
 pub trait GalgameWebsite {
     async fn fetch_metadata(
@@ -26,7 +27,7 @@ pub trait GalgameWebsite {
         http_client: &isahc::HttpClient,
         log_client: &crate::log::LoggingClient,
     ) -> Result<Vec<u8>, String>;
-    async fn download_game(
+    async fn download_http_game(
         &self,
         link: String,
         game_info: &crate::saved::GameTextInformation,

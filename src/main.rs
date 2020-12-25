@@ -302,6 +302,7 @@ async fn _main() {
             if !std::path::Path::new(&download_path).is_dir() {
                 std::fs::create_dir(&download_path).unwrap();
             }
+            let mut unparsable_games = Vec::new();
             let games: Vec<(
                 (String, (String, Option<u128>)),
                 String,
@@ -317,6 +318,7 @@ async fn _main() {
                         .collect::<Vec<_>>()
                 })
                 .flatten()
+                    .filter_map(|x| if x.0.1.0.find("Unparsable:") == Some(0) {unparsable_games.push(x.0.1.0.trim_start_matches("Unparsable:")); None} else {Some(x)})
                 .map(|x| {
                     (
                         (
@@ -357,7 +359,7 @@ async fn _main() {
                                             &cli::AvailableWebsite::from_str(&x.2.website).unwrap(),
                                         )
                                         .unwrap()
-                                        .download_game(
+                                        .download_http_game(
                                             x.0 .1 .0.clone(),
                                             x.2,
                                             format!("{}{}/{}", download_path, x.1, x.0 .0),
