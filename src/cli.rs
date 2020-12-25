@@ -52,6 +52,8 @@ pub enum ApplicationSubCommand {
         no_overwrite: bool,
         #[structopt(long, default_value = "Downloads/")]
         download_path: String,
+        #[structopt(long, short)]
+        save_unparsable_games_list: Option<String>,
     },
     Export {
         #[structopt(short, long)]

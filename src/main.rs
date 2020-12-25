@@ -287,6 +287,7 @@ async fn _main() {
             game_id,
             no_overwrite,
             download_path,
+            save_unparsable_games_list,
         } => {
             let mut id_hashmap = std::collections::HashMap::new();
             if game_id.len() == 0 {
@@ -318,7 +319,14 @@ async fn _main() {
                         .collect::<Vec<_>>()
                 })
                 .flatten()
-                    .filter_map(|x| if x.0.1.0.find("Unparsable:") == Some(0) {unparsable_games.push(x.0.1.0.trim_start_matches("Unparsable:")); None} else {Some(x)})
+                .filter_map(|x| {
+                    if x.0 .1 .0.find("Unparsable:") == Some(0) {
+                        unparsable_games.push(x.0 .1 .0.trim_start_matches("Unparsable:"));
+                        None
+                    } else {
+                        Some(x)
+                    }
+                })
                 .map(|x| {
                     (
                         (
@@ -375,6 +383,10 @@ async fn _main() {
             pool_future::VectorFuturePool::new(job_queue, arguments.thread_limit.unwrap_or(50))
                 .execute_till_complete()
                 .await;
+            if let Some(i) = save_unparsable_games_list {
+                logging_client.log(log::LoggingLevel::Message, "Saving unparsable game list...");
+                std::fs::write(i, unparsable_games.join("\n")).unwrap();
+            }
         }
         cli::ApplicationSubCommand::Export {
             markdown_location,
