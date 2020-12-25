@@ -23,7 +23,7 @@ script:
   - mv database.json bishojo-db/
   - git config --global user.name "meltdownnn"
   - git config --global user.email "75382863+meltdownnn@users.noreply.github.com"
-  - bash -c "cd bishojo-db; split -b 90m database.bin; rm database.bin; git add *; git commit -m \"Automatic build\";git push"
+  - bash -c "cd bishojo-db; split -b 90m database.bin; rm database.bin; git add *; git commit -m \"Automatic build\"; git gc --aggressive --prune; git push"
   - rm ssh_key
 cache:
   cargo: true
