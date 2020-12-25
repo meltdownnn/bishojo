@@ -10,6 +10,7 @@ script:
   - openssl aes-256-cbc -d -a -in id_rsa.enc -out id_rsa -pass pass:${PASSPHRASE}
   - mv id_rsa ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
+  - rm ~/.ssh/known_hosts
   - git clone git@github.com:meltdownnn/bishojo-db.git
   - cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*
   - mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json
