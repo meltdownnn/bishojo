@@ -1,4 +1,4 @@
-arch: arm64
+arch: amd64
 os: linux
 dist: focal
 language: rust
@@ -16,7 +16,7 @@ script:
   - git clone git@github.com:meltdownnn/bishojo-db.git
   - cat bishojo-db/x* > bishojo-db/database.bin && rm -f bishojo-db/x*
   - mv bishojo-db/database.bin database.bin; mv bishojo-db/database.json database.json
-  - cargo run --release -- -r 20 -t 2 --timeout 60 fetch-metadata --end-page 200 --site kkgal --start-page 1
+  - cargo run --release -- -r 20 -t 2 --timeout 60 fetch-metadata --end-page 200 --site kkgal --start-page 1 --overwrite
   - cargo run --release -- -r 20 -t 2 --timeout 60 download-images
   - cargo run --release -- -r 20 -t 2 --timeout 60 download-user-avatars --site kkgal
   - mv database.bin bishojo-db/database.bin
